@@ -41,6 +41,7 @@ import (
 	ddsif "github.com/kcp-dev/kcp/pkg/informer"
 	"github.com/kcp-dev/kcp/pkg/logging"
 	"github.com/kcp-dev/kcp/pkg/syncer/shared"
+	"github.com/kcp-dev/kcp/pkg/syncer/storage"
 )
 
 const (
@@ -116,6 +117,13 @@ func NewStatusSyncer(syncerLogger logr.Logger, syncTargetClusterName logicalclus
 				if gvr == namespaceGVR {
 					return
 				}
+
+				unstrob := obj.(*unstructured.Unstructured)
+				if hasDelayStatusSyncingAnnotation(unstrob) {
+					logger.V(2).Info("Delay status syncing", "gvr", gvr.String(), "name", unstrob.GetName(), "namespace", unstrob.GetNamespace(), "since annotation is set", storage.DelayStatusSyncing)
+					return
+				}
+
 				c.AddToQueue(gvr, obj, logger)
 			},
 			UpdateFunc: func(gvr schema.GroupVersionResource, oldObj, newObj interface{}) {
@@ -125,7 +133,7 @@ func NewStatusSyncer(syncerLogger logr.Logger, syncTargetClusterName logicalclus
 				oldUnstrob := oldObj.(*unstructured.Unstructured)
 				newUnstrob := newObj.(*unstructured.Unstructured)
 
-				if !deepEqualFinalizersAndStatus(oldUnstrob, newUnstrob) {
+				if !notDeepEqualFinalizersAndStatusOrDelayStatusSyncingAnnotationChanged(oldUnstrob, newUnstrob) {
 					c.AddToQueue(gvr, newUnstrob, logger)
 				}
 			},
