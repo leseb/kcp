@@ -358,7 +358,7 @@ func StartSyncer(ctx context.Context, cfg *SyncerConfig, numSyncerThreads int, i
 				},
 				Create: func(ctx context.Context) (controllermanager.StartControllerFunc, error) {
 					persistentVolumeController, err := storage.NewPersistentVolumeController(logger, logicalcluster.From(syncTarget), cfg.SyncTargetName, syncTargetKey,
-						downstreamKubeClient, ddsifForUpstreamSyncer, ddsifForDownstream, syncTarget.GetUID())
+						downstreamKubeClient, ddsifForUpstreamUpsyncer, ddsifForDownstream, syncTarget.GetUID())
 					if err != nil {
 						return nil, err
 					}
